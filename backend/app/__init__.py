@@ -45,9 +45,15 @@ def create_app() -> FastAPI:
     # ── Lifecycle Events ──────────────────────────────────────────────
     @app.on_event("startup")
     async def startup():
-        # 1. Ensure DB tables exist and seed default data
-        Base.metadata.create_all(bind=engine)
-        init_db()
+        # Only run migrations/seeding if NOT on Vercel (avoid cold start timeouts)
+        if not os.getenv("VERCEL"):
+            # 1. Ensure DB tables exist and seed default data
+            Base.metadata.create_all(bind=engine)
+            init_db()
+        else:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info("Running on Vercel — skipping deep database initialization")
 
         # 2. Import notification_service to register event handlers (Observer Pattern)
         import app.services.notification_service  # noqa: F401
