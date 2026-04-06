@@ -1,5 +1,7 @@
 # app/__init__.py — FastAPI Application Factory
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
