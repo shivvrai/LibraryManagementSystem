@@ -30,6 +30,7 @@ class Settings(BaseSettings):
         "http://127.0.0.1:5173",
         "http://localhost",
         "http://127.0.0.1",
+        "https://library-management-system-fnjr.vercel.app",
     ]
 
     # Set this to your EC2 public IP on AWS, e.g. "http://13.235.50.100"
