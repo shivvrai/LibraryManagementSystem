@@ -1,7 +1,6 @@
 {
-  "name": "library-management-system-root",
-  "version": "1.0.0",
   "scripts": {
-    "vercel-build": "cd frontend && npm install && npm run build && cd .. && rmdir /s /q dist 2>nul || rm -rf dist && cp -r frontend/dist dist"
+    "build": "cd frontend && npm install && npm run build",
+    "vercel-build": "cd frontend && npm install && npm run build"
   }
 }
