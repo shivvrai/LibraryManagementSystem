@@ -1,0 +1,22 @@
+# Backend Dependencies — Library Management System v3.0
+
+# ── Core Framework ────────────────────────────────────────────────────
+fastapi==0.121.1
+uvicorn==0.38.0
+pydantic==2.12.4
+pydantic-settings==2.9.1
+
+# ── Database ──────────────────────────────────────────────────────────
+sqlalchemy==2.0.41
+
+# ── Security ──────────────────────────────────────────────────────────
+bcrypt==5.0.0
+PyJWT==2.10.1
+
+# ── Utilities ─────────────────────────────────────────────────────────
+python-dotenv==1.2.1
+python-multipart==0.0.6
+
+# ── Search & Probabilistic Data Structures ────────────────────────────
+elasticsearch==8.13.0
+pybloom-live==4.0.0
