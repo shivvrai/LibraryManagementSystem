@@ -45,43 +45,48 @@ def create_app() -> FastAPI:
     # ── Lifecycle Events ──────────────────────────────────────────────
     @app.on_event("startup")
     async def startup():
-        # Only run migrations/seeding if NOT on Vercel (avoid cold start timeouts)
-        if not os.getenv("VERCEL"):
-            # 1. Ensure DB tables exist and seed default data
-            Base.metadata.create_all(bind=engine)
-            init_db()
-        else:
-            import logging
-            logger = logging.getLogger(__name__)
-            logger.info("Running on Vercel — skipping deep database initialization")
-
         # 2. Import notification_service to register event handlers (Observer Pattern)
         import app.services.notification_service  # noqa: F401
 
-        # 3. ── Bloom Filter initialization ────────────────────────────
-        #    Seed both filters (username + ISBN) from the live DB so that
-        #    every register/check-username/add-book call benefits immediately.
-        from app.services.bloom_service import bloom_service
-        from app.database import SessionLocal
-        db = SessionLocal()
-        try:
-            bloom_service.initialize(db)
-        finally:
-            db.close()
+        # Only run heavy database operations if NOT on Vercel (avoid cold start timeouts)
+        if not os.getenv("VERCEL"):
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info("Running locally — executing deep database initialization...")
 
-        # 4. ── Elasticsearch initialization + full reindex ────────────
-        #    Connect to ES, ensure the index exists, then bulk-upsert all
-        #    books so the search engine is immediately in sync with the DB.
-        from app.services.search_service import search_service
-        from app.repositories.book_repo import BookRepository
-        search_service.initialize()
-        if search_service.is_available():
-            db2 = SessionLocal()
+            # 1. Ensure DB tables exist and seed default data
+            Base.metadata.create_all(bind=engine)
+            init_db()
+
+            # 3. ── Bloom Filter initialization ────────────────────────────
+            #    Seed both filters (username + ISBN) from the live DB so that
+            #    every register/check-username/add-book call benefits immediately.
+            from app.services.bloom_service import bloom_service
+            from app.database import SessionLocal
+            db = SessionLocal()
             try:
-                all_books = BookRepository(db2).get_all_sorted(skip=0, limit=100_000)
-                search_service.reindex_all(all_books)
+                bloom_service.initialize(db)
             finally:
-                db2.close()
+                db.close()
+
+            # 4. ── Elasticsearch initialization + full reindex ────────────
+            #    Connect to ES, ensure the index exists, then bulk-upsert all
+            #    books so the search engine is immediately in sync with the DB.
+            from app.services.search_service import search_service
+            from app.repositories.book_repo import BookRepository
+            search_service.initialize()
+            if search_service.is_available():
+                db2 = SessionLocal()
+                try:
+                    all_books = BookRepository(db2).get_all_sorted(skip=0, limit=100_000)
+                    search_service.reindex_all(all_books)
+                finally:
+                    db2.close()
+        else:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.info("Running on Vercel — skipping deep database and search initialization to prevent timeouts")
+
 
     # ── Root & Health ─────────────────────────────────────────────────
     @app.get("/", tags=["Health"])
